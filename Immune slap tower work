@@ -1,0 +1,169 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
+local Debris = game:GetService("Debris")
+local LocalPlayer = Players.LocalPlayer
+
+-- GUI Utama
+local screenGui = Instance.new("ScreenGui", game.CoreGui)
+screenGui.Name = "GodMode_GUI"
+
+-- Frame Utama
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 180, 0, 60)
+mainFrame.Position = UDim2.new(0, 50, 0, 50)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+
+-- Title Bar
+local titleBar = Instance.new("TextLabel")
+titleBar.Size = UDim2.new(1, 0, 0, 25)
+titleBar.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+titleBar.Text = "Made by amdzy_1"
+titleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleBar.TextSize = 14
+titleBar.Font = Enum.Font.SourceSansBold
+titleBar.Parent = mainFrame
+
+-- Tombol Minimize
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Size = UDim2.new(0, 25, 0, 25)
+minimizeButton.Position = UDim2.new(1, -25, 0, 0)
+minimizeButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+minimizeButton.Text = "-"
+minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeButton.Font = Enum.Font.SourceSansBold
+minimizeButton.TextSize = 18
+minimizeButton.Parent = mainFrame
+
+-- Suara klik ASMR
+local clickSound = Instance.new("Sound")
+clickSound.SoundId = "rbxassetid://9118823102"
+clickSound.Volume = 1
+clickSound.Parent = screenGui
+
+-- Tombol Anti-KB
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 150, 0, 30)
+toggleButton.Position = UDim2.new(0, 15, 0, 30)
+toggleButton.Text = "Anti-KB: ON"
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+toggleButton.Font = Enum.Font.SourceSansBold
+toggleButton.TextSize = 14
+toggleButton.Parent = mainFrame
+
+-- Minimize Logic
+local isMinimized = false
+minimizeButton.MouseButton1Click:Connect(function()
+	clickSound:Play()
+	isMinimized = not isMinimized
+
+	if isMinimized then
+		toggleButton:TweenSize(UDim2.new(0, 0, 0, 0), "Out", "Quad", 0.3, true)
+		mainFrame:TweenSize(UDim2.new(0, 180, 0, 25), "Out", "Quad", 0.3, true)
+		minimizeButton.Text = "+"
+	else
+		toggleButton:TweenSize(UDim2.new(0, 150, 0, 30), "Out", "Quad", 0.3, true)
+		mainFrame:TweenSize(UDim2.new(0, 180, 0, 60), "Out", "Quad", 0.3, true)
+		minimizeButton.Text = "-"
+	end
+end)
+
+-- Toggle Logic
+local toggle = true
+toggleButton.MouseButton1Click:Connect(function()
+	clickSound:Play()
+	toggle = not toggle
+	toggleButton.Text = toggle and "Anti-KB: ON" or "Anti-KB: OFF"
+	toggleButton.BackgroundColor3 = toggle and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0)
+end)
+
+-- Notifikasi Awal
+pcall(function()
+	StarterGui:SetCore("SendNotification", {
+		Title = "IMMUNE SLAP",
+		Text = "made by AMDZY_1",
+		Duration = 9
+	})
+end)
+
+-- Fungsi Perlindungan
+local function protectCharacter(char)
+	local humanoid = char:WaitForChild("Humanoid")
+	local hrp = char:WaitForChild("HumanoidRootPart")
+
+	humanoid.WalkSpeed = 16
+	humanoid.JumpPower = 50
+	humanoid.UseJumpPower = true
+	humanoid.JumpHeight = 7.2
+	humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+	humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, false)
+
+	-- Kebal dari laser / kill brick
+	for _, part in ipairs(char:GetDescendants()) do
+		if part:IsA("BasePart") then
+			part.Touched:Connect(function(hit)
+				if hit and hit:IsA("BasePart") and (hit.Name:lower():find("kill") or hit.Name:lower():find("laser")) then
+					-- Abaikan, tidak mati
+				end
+			end)
+		end
+	end
+
+	-- Mencegah Health turun
+	humanoid.HealthChanged:Connect(function()
+		if humanoid.Health < humanoid.MaxHealth then
+			humanoid.Health = humanoid.MaxHealth
+		end
+	end)
+
+	RunService.Stepped:Connect(function()
+		if toggle and humanoid and hrp then
+			for _, v in pairs(char:GetDescendants()) do
+				if v:IsA("BodyVelocity") or v:IsA("BodyAngularVelocity") or v:IsA("BodyForce") or v:IsA("VectorForce") then
+					v:Destroy()
+				end
+			end
+
+			humanoid.PlatformStand = false
+			humanoid:ChangeState(Enum.HumanoidStateType.Running)
+
+			-- Fake platform buat CanCollide false
+			local rayOrigin = hrp.Position
+			local rayDirection = Vector3.new(0, -5, 0)
+			local raycastParams = RaycastParams.new()
+			raycastParams.FilterDescendantsInstances = {char}
+			raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+
+			local raycastResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+			if raycastResult then
+				local hit = raycastResult.Instance
+				if hit and not hit.CanCollide then
+					local fakePlatform = Instance.new("Part")
+					fakePlatform.Anchored = true
+					fakePlatform.Size = Vector3.new(6, 0.2, 6)
+					fakePlatform.Position = Vector3.new(hrp.Position.X, hit.Position.Y + 0.5, hrp.Position.Z)
+					fakePlatform.Transparency = 1
+					fakePlatform.CanCollide = true
+					fakePlatform.Name = "FakeFloor"
+					fakePlatform.Parent = workspace
+					Debris:AddItem(fakePlatform, 0.1)
+				end
+			end
+		end
+	end)
+end
+
+-- Inisialisasi
+if LocalPlayer.Character then
+	protectCharacter(LocalPlayer.Character)
+end
+
+LocalPlayer.CharacterAdded:Connect(function(char)
+	char:WaitForChild("HumanoidRootPart")
+	protectCharacter(char)
+end)
